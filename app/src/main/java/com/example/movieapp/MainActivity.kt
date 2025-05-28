@@ -27,14 +27,7 @@ class MainActivity : AppCompatActivity() {
 
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
-
         setSupportActionBar(binding.toolbar)
-
-        // Since HomeFragment doesn't have its own toolbar, the MainActivity's ActionBar
-        // will be used. We don't need AppBarConfiguration for a single top-level destination.
-        // setupActionBarWithNavController(navController)
-
-        // Invalidate the options menu to ensure it's drawn
         invalidateOptionsMenu()
     }
 
