@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Movie App</string>
+    <string name="back_button_description">Navigate back</string>
+    <string name="favorite_button_description">Toggle favorite</string>
+    <string name="movie_poster_description">Movie poster</string>
+    <string name="overview_label">Overview</string>
+    <string name="runtime_format">Runtime: %d min</string>
+    <string name="tab_all_movies">All Movies</string>
+    <string name="tab_favorites">Favorites</string>
+    <string name="error_loading_movies">Error loading movies</string>
+    <string name="rating_format">Rating: %.1f/10</string>
+    <string name="overview">Overview</string>
+    <string name="genres">Genres</string>
+    <string name="favorite">Favorite</string>
+    <string name="unfavorite">Unfavorite</string>
+</resources>
