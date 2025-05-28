@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.action_toggle_layout -> {
+            R.id.change_toggle_layout -> {
                 sharedViewModel.toggleLayout()
                 updateLayoutToggleIcon(item)
                 true
