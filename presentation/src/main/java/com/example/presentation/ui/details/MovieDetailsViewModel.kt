@@ -1,15 +1,14 @@
-package com.example.movieapp.ui.details
+package com.example.presentation.ui.details
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.movieapp.data.model.Movie
-import com.example.movieapp.data.repository.MovieRepository
+import com.example.domain.model.Movie
+import com.example.domain.usecase.GetMovieDetailsUseCase
+import com.example.domain.usecase.ToggleFavoriteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -17,49 +16,76 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MovieDetailsViewModel @Inject constructor(
-    private val movieRepository: MovieRepository
+    private val getMovieDetailsUseCase: GetMovieDetailsUseCase,
+    private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    private val movieId: Int = checkNotNull(savedStateHandle["movieId"])
 
     private val _state = MutableStateFlow(MovieDetailsState())
     val state: StateFlow<MovieDetailsState> = _state.asStateFlow()
 
-    private val _effect = MutableSharedFlow<MovieDetailsEffect>()
-    val effect: SharedFlow<MovieDetailsEffect> = _effect.asSharedFlow()
+    init {
+        loadMovieDetails()
+    }
 
-    fun handleIntent(intent: MovieDetailsIntent) {
-        when (intent) {
-            is MovieDetailsIntent.LoadMovieDetails -> loadMovieDetails(intent.movieId)
-            is MovieDetailsIntent.ToggleFavorite -> toggleFavorite(intent.movie)
+    fun onEvent(event: MovieDetailsEvent) {
+        when (event) {
+            is MovieDetailsEvent.LoadMovieDetails -> loadMovieDetails()
+            is MovieDetailsEvent.OnFavoriteClick -> handleFavoriteClick()
+            is MovieDetailsEvent.Retry -> loadMovieDetails()
         }
     }
 
-    private fun loadMovieDetails(movieId: Int) {
+    private fun loadMovieDetails() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             try {
-                val movieDetails = movieRepository.getMovieDetails(movieId)
-                val isFavorite = movieRepository.isFavorite(movieId)
-                _state.update {
+                val movieDetails = getMovieDetailsUseCase(movieId)
+                _state.update { 
                     it.copy(
-                        isLoading = false,
                         movieDetails = movieDetails,
-                        isFavorite = isFavorite
+                        isLoading = false
                     )
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, error = e.message) }
-                _effect.emit(MovieDetailsEffect.ShowError(e.message ?: "Unknown error occurred"))
+                _state.update { 
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "An error occurred"
+                    )
+                }
             }
         }
     }
 
-    private fun toggleFavorite(movie: Movie) {
+    private fun handleFavoriteClick() {
+        val currentMovie = _state.value.movieDetails ?: return
         viewModelScope.launch {
             try {
-                movieRepository.toggleFavorite(movie)
-                _state.update { it.copy(isFavorite = !it.isFavorite) }
+                val movie = Movie(
+                    id = currentMovie.id,
+                    title = currentMovie.title,
+                    overview = currentMovie.overview,
+                    posterPath = currentMovie.posterPath,
+                    backdropPath = currentMovie.backdropPath,
+                    releaseDate = currentMovie.releaseDate,
+                    voteAverage = currentMovie.voteAverage,
+                    isFavorite = currentMovie.isFavorite
+                )
+                toggleFavoriteUseCase(movie)
+                _state.update { 
+                    it.copy(
+                        movieDetails = it.movieDetails?.copy(
+                            isFavorite = !it.movieDetails.isFavorite
+                        )
+                    )
+                }
             } catch (e: Exception) {
-                _effect.emit(MovieDetailsEffect.ShowError(e.message ?: "Failed to update favorite status"))
+                _state.update { 
+                    it.copy(error = e.message ?: "Failed to update favorite status")
+                }
             }
         }
     }

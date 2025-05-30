@@ -1,7 +1,8 @@
 package com.example.movieapp.data.model
 
-import com.example.movieapp.data.api.Movie as ApiMovie
-import com.example.movieapp.data.local.FavoriteMovie
+import com.example.data.local.FavoriteMovie
+import com.example.movieapp.data.model.Movie as ApiMovie
+
 
 data class Movie(
     val id: Int,
@@ -14,18 +15,18 @@ data class Movie(
     val isFavorite: Boolean = false
 ) {
     companion object {
-        fun fromApi(apiMovie: ApiMovie, isFavorite: Boolean = false) = Movie(
+        fun fromApi(apiMovie: ApiMovie, isFavorite: Boolean = false) = ApiMovie(
             id = apiMovie.id,
             title = apiMovie.title,
-            posterPath = apiMovie.poster_path,
-            backdropPath = apiMovie.backdrop_path,
-            releaseDate = apiMovie.release_date,
+            posterPath = apiMovie.posterPath,
+            backdropPath = apiMovie.backdropPath,
+            releaseDate = apiMovie.releaseDate,
             overview = apiMovie.overview,
-            voteAverage = apiMovie.vote_average,
+            voteAverage = apiMovie.voteAverage,
             isFavorite = isFavorite
         )
 
-        fun fromFavorite(favoriteMovie: FavoriteMovie) = Movie(
+        fun fromFavorite(favoriteMovie: FavoriteMovie) = ApiMovie(
             id = favoriteMovie.id,
             title = favoriteMovie.title,
             posterPath = favoriteMovie.posterPath,

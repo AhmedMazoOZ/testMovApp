@@ -1,4 +1,4 @@
-package com.example.movieapp.data.local
+package com.example.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -8,10 +8,9 @@ data class FavoriteMovie(
     @PrimaryKey
     val id: Int,
     val title: String,
+    val overview: String,
     val posterPath: String?,
     val backdropPath: String?,
     val releaseDate: String,
-    val overview: String,
-    val voteAverage: Double,
-    val timestamp: Long = System.currentTimeMillis()
+    val voteAverage: Double
 ) 

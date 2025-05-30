@@ -12,6 +12,9 @@
 #   public *;
 #}
 
+-keepnames class androidx.navigation.fragment.NavHostFragment
+-keep class androidx.fragment.app.** { *; }
+
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
 #-keepattributes SourceFile,LineNumberTable

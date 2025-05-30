@@ -1,5 +1,4 @@
-package com.example.movieapp.ui.home
-
+package com.example.presentation.ui.home
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -7,9 +6,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.example.movieapp.R
-import com.example.movieapp.data.model.Movie
-import com.example.movieapp.databinding.ItemMovieBinding
+import com.example.domain.model.Movie
+import com.example.presentation.databinding.ItemMovieBinding
 
 class MovieAdapter(
     private val onMovieClick: (Movie) -> Unit,
@@ -35,14 +33,14 @@ class MovieAdapter(
 
         init {
             binding.root.setOnClickListener {
-                val position = adapterPosition
+                val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     onMovieClick(getItem(position))
                 }
             }
 
             binding.favoriteButton.setOnClickListener {
-                val position = adapterPosition
+                val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     onFavoriteClick(getItem(position))
                 }
@@ -50,12 +48,11 @@ class MovieAdapter(
         }
 
         fun bind(movie: Movie) {
-            binding.titleText.text = movie.title
-            binding.releaseDateText.text = movie.releaseDate
-            binding.favoriteButton.setImageResource(
-                if (movie.isFavorite) R.drawable.ic_favorite_filled
-                else R.drawable.ic_favorite_border
-            )
+            binding.apply {
+                titleText.text = movie.title
+                releaseDateText.text = movie.releaseDate
+                favoriteButton.isChecked = movie.isFavorite
+            }
 
             movie.posterPath?.let { posterPath ->
                 val imageUrl = "https://image.tmdb.org/t/p/w500$posterPath"

@@ -1,21 +1,19 @@
-package com.example.movieapp.ui.home
+package com.example.presentation.ui.home
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-
-import com.example.movieapp.ui.shared.SharedViewModel
+import com.example.presentation.R
+import com.example.presentation.databinding.FragmentHomeBinding
+import com.example.presentation.ui.common.UiState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -25,16 +23,10 @@ class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: HomeViewModel by activityViewModels()
-    private val sharedViewModel: SharedViewModel by activityViewModels()
-
+    private val viewModel: HomeViewModel by viewModels()
     private val movieAdapter = MovieAdapter(
-        onMovieClick = { movie ->
-            viewModel.handleIntent(HomeIntent.MovieClicked(movie))
-        },
-        onFavoriteClick = { movie ->
-            viewModel.handleIntent(HomeIntent.ToggleFavorite(movie))
-        }
+        onMovieClick = { movie -> viewModel.onEvent(HomeEvent.OnMovieClick(movie)) },
+        onFavoriteClick = { movie -> viewModel.onEvent(HomeEvent.OnFavoriteClick(movie)) }
     )
 
     override fun onCreateView(
@@ -49,35 +41,21 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
-        setupSwipeRefresh()
         observeState()
-        observeEffects()
-        observeSharedViewModel()
-        viewModel.handleIntent(HomeIntent.LoadMovies)
     }
 
     private fun setupRecyclerView() {
-        binding.moviesRecyclerView.apply {
+        binding.recyclerView.apply {
             adapter = movieAdapter
-            layoutManager = LinearLayoutManager(requireContext())
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            layoutManager = GridLayoutManager(requireContext(), 2)
+            addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
-                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                    val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
-                    val totalItemCount = layoutManager.itemCount
-
-                    if (lastVisibleItem >= totalItemCount - 5) {
-                        viewModel.handleIntent(HomeIntent.LoadMoreMovies)
+                    if (!recyclerView.canScrollVertically(1)) {
+                        viewModel.onEvent(HomeEvent.LoadMoreMovies)
                     }
                 }
             })
-        }
-    }
-
-    private fun setupSwipeRefresh() {
-        binding.swipeRefresh.setOnRefreshListener {
-            viewModel.handleIntent(HomeIntent.LoadMovies)
         }
     }
 
@@ -85,44 +63,20 @@ class HomeFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
-                    binding.progressBar.visibility = if (state.isLoading) View.VISIBLE else View.GONE
-                    binding.swipeRefresh.isRefreshing = state.isLoading
-
-                    movieAdapter.submitList(state.movies)
+                    updateUi(state)
                 }
             }
         }
     }
 
-    private fun observeSharedViewModel() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                sharedViewModel.isGridLayout.collect { isGridLayout ->
-                    binding.moviesRecyclerView.layoutManager = if (isGridLayout) {
-                        GridLayoutManager(requireContext(), 2)
-                    } else {
-                        LinearLayoutManager(requireContext())
-                    }
-                }
-            }
-        }
-    }
+    private fun updateUi(state: HomeState) {
+        binding.progressBar.visibility = if (state.isLoading) View.VISIBLE else View.GONE
+        binding.errorMessage.visibility = if (state.error != null) View.VISIBLE else View.GONE
+        binding.errorMessage.text = state.error
+        binding.retryButton.visibility = if (state.error != null) View.VISIBLE else View.GONE
+        binding.retryButton.setOnClickListener { viewModel.onEvent(HomeEvent.Retry) }
 
-    private fun observeEffects() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.effect.collect { effect ->
-                    when (effect) {
-                        is HomeEffect.ShowError -> {
-                            Toast.makeText(requireContext(), effect.message, Toast.LENGTH_LONG).show()
-                        }
-                        is HomeEffect.NavigateToMovieDetails -> {
-                            findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToMovieDetailsFragment(effect.movieId))
-                        }
-                    }
-                }
-            }
-        }
+        movieAdapter.submitList(state.movies)
     }
 
     override fun onDestroyView() {

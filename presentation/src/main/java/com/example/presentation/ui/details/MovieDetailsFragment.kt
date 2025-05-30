@@ -1,4 +1,4 @@
-package com.example.movieapp.ui.details
+package com.example.presentation.ui.details
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -14,10 +14,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import coil.load
-import com.example.movieapp.R
-import com.example.movieapp.data.api.MovieDetails
-import com.example.movieapp.data.model.Movie
-import com.example.movieapp.databinding.FragmentMovieDetailsBinding
+import com.example.presentation.databinding.FragmentMovieDetailsBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -42,6 +39,7 @@ class MovieDetailsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupToolbar()
+        setupClickListeners()
         observeState()
         observeEffects()
         loadMovieDetails()
@@ -53,6 +51,15 @@ class MovieDetailsFragment : Fragment() {
         }
     }
 
+    private fun setupClickListeners() {
+        binding.favoriteButton.setOnClickListener {
+            viewModel.onEvent(MovieDetailsEvent.OnFavoriteClick)
+        }
+        binding.retryButton.setOnClickListener {
+            viewModel.onEvent(MovieDetailsEvent.Retry)
+        }
+    }
+
     private fun loadMovieDetails() {
         viewModel.handleIntent(MovieDetailsIntent.LoadMovieDetails(args.movieId))
     }
@@ -61,10 +68,7 @@ class MovieDetailsFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
-                    binding.progressBar.isVisible = state.isLoading
-                    state.movieDetails?.let { movieDetails ->
-                        updateUI(movieDetails, state.isFavorite)
-                    }
+                    updateUi(state)
                 }
             }
         }
@@ -84,38 +88,25 @@ class MovieDetailsFragment : Fragment() {
         }
     }
 
-    private fun updateUI(movieDetails: MovieDetails, isFavorite: Boolean) {
-        with(binding) {
-            toolbar.title = movieDetails.title
-            backdropImage.load("https://image.tmdb.org/t/p/w500${movieDetails.backdrop_path}")
-            posterImage.load("https://image.tmdb.org/t/p/w500${movieDetails.poster_path}")
-            titleText.text = movieDetails.title
-            releaseDateText.text = movieDetails.release_date
-            ratingText.text = getString(R.string.rating_format, movieDetails.vote_average)
-            overviewText.text = movieDetails.overview
-            runtimeText.text = getString(R.string.runtime_format, movieDetails.runtime)
-            genresText.text = movieDetails.genres.joinToString(", ") { it.name }
+    private fun updateUi(state: MovieDetailsState) {
+        binding.progressBar.visibility = if (state.isLoading) View.VISIBLE else View.GONE
+        binding.errorMessage.visibility = if (state.error != null) View.VISIBLE else View.GONE
+        binding.errorMessage.text = state.error
+        binding.retryButton.visibility = if (state.error != null) View.VISIBLE else View.GONE
+        binding.content.visibility = if (state.movieDetails != null) View.VISIBLE else View.GONE
 
-            favoriteButton.setImageResource(
-                if (isFavorite) R.drawable.ic_favorite_filled
-                else R.drawable.ic_favorite_border
-            )
-            favoriteButton.setOnClickListener {
-                viewModel.handleIntent(
-                    MovieDetailsIntent.ToggleFavorite(
-                        Movie(
-                            id = movieDetails.id,
-                            title = movieDetails.title,
-                            posterPath = movieDetails.poster_path,
-                            backdropPath = movieDetails.backdrop_path,
-                            releaseDate = movieDetails.release_date,
-                            overview = movieDetails.overview,
-                            voteAverage = movieDetails.vote_average,
-                            isFavorite = isFavorite
-                        )
-                    )
-                )
-            }
+        state.movieDetails?.let { movie ->
+            binding.title.text = movie.title
+            binding.overview.text = movie.overview
+            binding.releaseDate.text = movie.releaseDate
+            binding.rating.text = movie.voteAverage.toString()
+            binding.runtime.text = "${movie.runtime} min"
+            binding.genres.text = movie.genres.joinToString(", ")
+            binding.favoriteButton.isSelected = movie.isFavorite
+
+            // Load images using your preferred image loading library
+            // Glide.with(this).load(movie.posterPath).into(binding.posterImage)
+            // Glide.with(this).load(movie.backdropPath).into(binding.backdropImage)
         }
     }
 
