@@ -1,0 +1,5 @@
+int id action_homeFragment_to_movieDetailsFragment 0x0
+int id homeFragment 0x0
+int id movieDetailsFragment 0x0
+int id nav_graph 0x0
+int navigation nav_graph 0x0

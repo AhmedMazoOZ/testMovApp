@@ -12,6 +12,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.example.movieapp.databinding.ActivityMainBinding
 import com.example.movieapp.ui.shared.ChangeLayoutViewModel
+import com.example.navigation.NavigationComponent
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -21,6 +22,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavController
     private lateinit var appBarConfiguration: AppBarConfiguration
     private val sharedViewModel: ChangeLayoutViewModel by viewModels()
+    private lateinit var navigationComponent: NavigationComponent
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +34,7 @@ class MainActivity : AppCompatActivity() {
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
+        navigationComponent = NavigationComponent(navController)
 
         appBarConfiguration = AppBarConfiguration(
             setOf(R.id.homeFragment)

@@ -1,0 +1,7 @@
+R_DEF: Internal format may change without notice
+local
+id action_homeFragment_to_movieDetailsFragment
+id homeFragment
+id movieDetailsFragment
+id nav_graph
+navigation nav_graph
